@@ -73,6 +73,8 @@ export default class SignUpComponent extends Vue {
   get validation(): boolean {
     if (this.form.password2 === '') return true;
 
+    Vue.$api_client;
+
     return this.form.password === this.form.password2;
   }
 }
