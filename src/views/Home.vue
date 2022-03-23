@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div class="container" v-if="!this.$cookies.get('state')">
     <div class="row" id="header">
       <div class="col"
         v-bind:class="{ inactive: activeColumn !== 0 }"
@@ -17,6 +17,9 @@
     <div v-else class="pb-2 pt-2">
       <sign-up-component />
     </div>
+  </div>
+  <div class="container" style="text-align: center;" v-else>
+    You are logged in! Click on Dashboard to continue.
   </div>
 </template>
 

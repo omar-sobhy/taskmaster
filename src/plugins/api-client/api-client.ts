@@ -1,14 +1,14 @@
-/* eslint-disable no-param-reassign */
 import { VueConstructor } from 'vue';
 
+import TaskmasterClient from 'taskmaster-client';
+
 const Plugin = {
-  install(Vue: VueConstructor) {
-    Vue.prototype.$api_client = this;
-  },
-
-  login() {
-
+  install(Vue: VueConstructor, options: any): void {
+    console.log(options);
+    // eslint-disable-next-line no-param-reassign
+    Vue.$apiClient = new TaskmasterClient('http://localhost:3000', options);
   },
 };
 
-export default Plugin;
+// eslint-disable-next-line import/prefer-default-export
+export { Plugin };

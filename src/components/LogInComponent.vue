@@ -3,14 +3,13 @@
     <b-form @submit="onSubmit">
       <b-form-group
         id="input-group-1"
-        label="Email"
+        label="Username"
         label-for="input-1"
       >
         <b-form-input
           id="input-1"
-          v-model="form.email"
-          type="email"
-          placeholder="Enter email"
+          v-model="form.username"
+          placeholder="Enter username"
           required
         />
       </b-form-group>
@@ -25,6 +24,10 @@
         />
       </b-form-group>
 
+      <b-form-invalid-feedback :state="validation">
+        Invalid username or password.
+      </b-form-invalid-feedback>
+
       <b-button type="submit" variant="primary">Submit</b-button>
     </b-form>
   </div>
@@ -36,13 +39,38 @@ import { Component, Vue } from 'vue-property-decorator';
 @Component
 export default class LogInComponent extends Vue {
   form = {
-    email: '',
+    username: '',
     password: '',
   }
 
-  onSubmit(event: Event): void {
+  status: 'Unsubmitted' | 'Submitted' | 'Error' = 'Unsubmitted';
+
+  get validation(): boolean {
+    if (this.status === 'Unsubmitted') return true;
+
+    if (this.status === 'Error') return false;
+
+    return true;
+  }
+
+  async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
-    alert(JSON.stringify(this.form));
+    const result = await Vue.$apiClient.login(this.form.username, this.form.password);
+    if (result.type === 'success') {
+      this.$store.commit('setLoggedInUser', result.data);
+      this.$cookies.set('state', this.$store.state);
+
+      this.$router.push('/dashboard');
+    } else {
+      this.status = 'Error';
+    }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  created(): void {
+    // if (this.$store.state.username !== '') {
+    //   this.$router.push('/dashboard');
+    // }
   }
 }
 </script>

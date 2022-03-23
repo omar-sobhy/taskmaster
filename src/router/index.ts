@@ -2,6 +2,7 @@ import Vue from 'vue';
 import VueRouter, { RouteConfig } from 'vue-router';
 import Home from '../views/Home.vue';
 import Dashboard from '../views/Dashboard.vue';
+import Project from '../views/Project.vue';
 
 Vue.use(VueRouter);
 
@@ -23,6 +24,12 @@ const routes: Array<RouteConfig> = [
     path: '/dashboard',
     name: 'Dashboard',
     component: Dashboard,
+  },
+  {
+    path: '/project/:projectId',
+    name: 'Project',
+    component: Project,
+    props: true,
   },
 ];
 

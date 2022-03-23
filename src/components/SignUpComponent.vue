@@ -43,6 +43,7 @@
           placeholder="Enter password again"
           required
         />
+
         <b-form-invalid-feedback :state="validation">
           Entered passwords do not match.
         </b-form-invalid-feedback>
@@ -67,13 +68,12 @@ export default class SignUpComponent extends Vue {
 
   onSubmit(event: Event): void {
     event.preventDefault();
-    alert(JSON.stringify(this.form));
+    const result = Vue.$apiClient.signup(this.form.username, this.form.password, this.form.email);
+    result.then((r) => console.log(r));
   }
 
   get validation(): boolean {
     if (this.form.password2 === '') return true;
-
-    Vue.$api_client;
 
     return this.form.password === this.form.password2;
   }
