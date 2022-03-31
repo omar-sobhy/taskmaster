@@ -18,112 +18,23 @@
               <b-col>
                 <h5>Your projects</h5>
               </b-col>
-              <b-col style="text-align: right;">
-              <b-icon-plus-circle
-                id="addProjectButton"
-                @click="showAddProjectModel"
-                v-b-modal.modal-1
-              />
+              <b-col style="text-align: right">
+                <b-icon-plus-circle
+                  id="addProjectButton"
+                  @click="showAddProjectModel"
+                  v-b-modal.modal-1
+                />
               </b-col>
             </b-row>
           </b-col>
         </b-row>
-        <b-row>
+        <b-row
+        v-for="(project, index) in projects"
+        :key="project._id">
           <b-col>
-            <a
-              v-for="(project, index) in projects"
-              :key="project._id"
-              @click="handleProjectRedirect($event, index)"
-            >
+            <a @click="handleProjectRedirect($event, index)">
               {{ project.name }}
             </a>
-          </b-col>
-          <b-col class="d-flex align-items-end">
-            <b-modal id="modal-1" title="Add project" @ok="handleOk">
-              <b-container fluid>
-                <b-form-row class="mb-2">
-                  <b-col> Project name </b-col>
-                  <b-col>
-                    <b-form-input v-model="name" />
-                  </b-col>
-                </b-form-row>
-                <b-form-row class="mb-2">
-                  <b-col> Project background </b-col>
-                  <b-col>
-                    <b-container>
-                      <b-row align-content="center" class="mb-2">
-                        <b-col
-                          class="text-center colour-picker mx-2"
-                          style="background: red"
-                          @click="selectedColour = 0"
-                          :class="{ selectedColour: selectedColour === 0 }"
-                        >
-                          &nbsp;
-                        </b-col>
-                        <b-col
-                          class="text-center colour-picker mx-2"
-                          style="background: blue"
-                          @click="selectedColour = 1"
-                          :class="{ selectedColour: selectedColour === 1 }"
-                        >
-                          &nbsp;
-                        </b-col>
-                        <b-col
-                          class="text-center colour-picker mx-2"
-                          style="background: green"
-                          @click="selectedColour = 2"
-                          :class="{ selectedColour: selectedColour === 2 }"
-                        >
-                          &nbsp;
-                        </b-col>
-                        <b-col
-                          class="text-center colour-picker mx-2"
-                          style="background: gold"
-                          @click="selectedColour = 3"
-                          :class="{ selectedColour: selectedColour === 3 }"
-                        >
-                          &nbsp;
-                        </b-col>
-                      </b-row>
-                      <b-row align-h="center">
-                        <b-col
-                          class="text-center colour-picker mx-2"
-                          style="background: teal"
-                          @click="selectedColour = 4"
-                          :class="{ selectedColour: selectedColour === 4 }"
-                        >
-                          &nbsp;
-                        </b-col>
-                        <b-col
-                          class="text-center colour-picker mx-2"
-                          style="background: orange"
-                          @click="selectedColour = 5"
-                          :class="{ selectedColour: selectedColour === 5 }"
-                        >
-                          &nbsp;
-                        </b-col>
-                        <b-col
-                          class="text-center colour-picker mx-2"
-                          style="background: darkblue"
-                          @click="selectedColour = 6"
-                          :class="{ selectedColour: selectedColour === 6 }"
-                        >
-                          &nbsp;
-                        </b-col>
-                        <b-col
-                          class="text-center colour-picker mx-2"
-                          style="background: darkslateblue"
-                          @click="selectedColour = 7"
-                          :class="{ selectedColour: selectedColour === 7 }"
-                        >
-                          &nbsp;
-                        </b-col>
-                      </b-row>
-                    </b-container>
-                  </b-col>
-                </b-form-row>
-              </b-container>
-            </b-modal>
           </b-col>
         </b-row>
       </b-col>
@@ -138,21 +49,21 @@
       <b-col cols="3">
         <b-row class="border-row">
           <b-col>
-            <h5>My Tasks <b-icon-arrow-down-short/></h5>
+            <h5>My Tasks <b-icon-arrow-down-short /></h5>
           </b-col>
         </b-row>
-        <b-row style="margin-bottom: 10px;">
+        <b-row style="margin-bottom: 10px">
           <b-col>
             <h5>My checklist</h5>
-            <div style="background: white; border-radius: 5px;">
-              <b-icon-plus-circle/> Add...
+            <div style="background: white; border-radius: 5px">
+              <b-icon-plus-circle /> Add...
             </div>
           </b-col>
         </b-row>
-        <b-row style="margin-bottom: 10px;">
+        <b-row style="margin-bottom: 10px">
           <b-col>
             <h5>Due today</h5>
-            <div style="background: white; border-radius: 5px;">
+            <div style="background: white; border-radius: 5px">
               Lorem Ipsum...
             </div>
           </b-col>
@@ -160,14 +71,13 @@
         <b-row>
           <b-col>
             <h5>Unscheduled</h5>
-            <div style="background: white; border-radius: 5px;">
+            <div style="background: white; border-radius: 5px">
               Lorem Ipsum...
             </div>
           </b-col>
         </b-row>
-
       </b-col>
-      <b-col cols="3" style="border-left: 1px solid black;">
+      <b-col cols="3" style="border-left: 1px solid black">
         <b-row class="border-row">
           <b-col>
             <h5>Your notifications</h5>
@@ -176,17 +86,108 @@
         <b-row>
           <b-col>
             <div
-            style="background: white; border-radius: 5px; margin-top: 10px; margin-bottom: 10px"
+              style="
+                background: white;
+                border-radius: 5px;
+                margin-top: 10px;
+                margin-bottom: 10px;
+              "
             >
               First notification
             </div>
-            <div style="background: white; border-radius: 5px;">
+            <div style="background: white; border-radius: 5px">
               Second notification
             </div>
           </b-col>
         </b-row>
       </b-col>
     </b-row>
+
+    <b-modal id="modal-1" title="Add project" @ok="handleOk">
+      <b-container fluid>
+        <b-form-row class="mb-2">
+          <b-col> Project name </b-col>
+          <b-col>
+            <b-form-input v-model="name" />
+          </b-col>
+        </b-form-row>
+        <b-form-row class="mb-2">
+          <b-col> Project background </b-col>
+          <b-col>
+            <b-container>
+              <b-row align-content="center" class="mb-2">
+                <b-col
+                  class="text-center colour-picker mx-2"
+                  style="background: red"
+                  @click="selectedColour = 0"
+                  :class="{ selectedColour: selectedColour === 0 }"
+                >
+                  &nbsp;
+                </b-col>
+                <b-col
+                  class="text-center colour-picker mx-2"
+                  style="background: blue"
+                  @click="selectedColour = 1"
+                  :class="{ selectedColour: selectedColour === 1 }"
+                >
+                  &nbsp;
+                </b-col>
+                <b-col
+                  class="text-center colour-picker mx-2"
+                  style="background: green"
+                  @click="selectedColour = 2"
+                  :class="{ selectedColour: selectedColour === 2 }"
+                >
+                  &nbsp;
+                </b-col>
+                <b-col
+                  class="text-center colour-picker mx-2"
+                  style="background: gold"
+                  @click="selectedColour = 3"
+                  :class="{ selectedColour: selectedColour === 3 }"
+                >
+                  &nbsp;
+                </b-col>
+              </b-row>
+              <b-row align-h="center">
+                <b-col
+                  class="text-center colour-picker mx-2"
+                  style="background: teal"
+                  @click="selectedColour = 4"
+                  :class="{ selectedColour: selectedColour === 4 }"
+                >
+                  &nbsp;
+                </b-col>
+                <b-col
+                  class="text-center colour-picker mx-2"
+                  style="background: orange"
+                  @click="selectedColour = 5"
+                  :class="{ selectedColour: selectedColour === 5 }"
+                >
+                  &nbsp;
+                </b-col>
+                <b-col
+                  class="text-center colour-picker mx-2"
+                  style="background: darkblue"
+                  @click="selectedColour = 6"
+                  :class="{ selectedColour: selectedColour === 6 }"
+                >
+                  &nbsp;
+                </b-col>
+                <b-col
+                  class="text-center colour-picker mx-2"
+                  style="background: darkslateblue"
+                  @click="selectedColour = 7"
+                  :class="{ selectedColour: selectedColour === 7 }"
+                >
+                  &nbsp;
+                </b-col>
+              </b-row>
+            </b-container>
+          </b-col>
+        </b-form-row>
+      </b-container>
+    </b-modal>
   </b-container>
 </template>
 
@@ -238,6 +239,10 @@ export default class Dashboard extends Vue {
       this.name,
       this.colours[this.selectedColour],
     );
+
+    if (result.type === 'success') {
+      this.projects.push(result.data);
+    }
 
     console.log(result);
     console.log('ok');

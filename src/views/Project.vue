@@ -14,15 +14,21 @@
           <div class="v-divider">
             &nbsp;
           </div>
-          <div class="project-name">
-            <h2>{{selectedProject.name}}</h2>
-          </div>
-          <div
-            class="project-name-arrow"
-            style="display: flex; align-items: center; cursor: pointer;"
+          <b-dropdown
+            id="dropdown"
+            :text="selectedProject.name"
+            variant="light"
           >
-            <b-icon-arrow-down style="margin: 0;"/>
-          </div>
+            <b-dropdown-item
+              v-b-modal.project-settings-modal
+            ><b-icon-gear/> Project settings...</b-dropdown-item>
+            <b-dropdown-divider/>
+            <b-dropdown-item><b-icon-trash/> Deleted tasks...</b-dropdown-item>
+            <b-dropdown-item><b-icon-archive/> Archived tasks...</b-dropdown-item>
+            <b-dropdown-divider/>
+            <b-dropdown-item><b-icon-emoji-smile/> Change icon...</b-dropdown-item>
+            <b-dropdown-item><b-icon-image/> Change background...</b-dropdown-item>
+          </b-dropdown>
       </b-row>
     </div>
     <div class="container-fluid">
@@ -97,13 +103,46 @@
         </b-row>
       </b-container>
     </b-modal>
+
+    <b-modal
+      id="project-settings-modal"
+      ok-only
+    >
+      <b-tabs>
+        <b-tab title="Overview">
+          <div class="overview">
+            <b-row
+              v-for="user in selectedProject.users" :key="user"
+            >
+              <b-col>
+                {{ user }}
+              </b-col>
+              <b-col class="icon-col">
+                <b-icon-x @click="removeUser(user)"/>
+              </b-col>
+            </b-row>
+          </div>
+
+          <a href="#"><b-icon-plus-circle/> Add member</a>
+        </b-tab>
+        <b-tab title="Tags">
+          <div
+            v-for="(tag, index) in selectedProject.tags"
+            :key="tag._id"
+            class="tag-div"
+            @mouseenter="hoveringOverIndex = index"
+            @mouseleave="hoveringOverIndex = -1"
+          >
+            {{ tag }}
+          </div>
+        </b-tab>
+      </b-tabs>
+    </b-modal>
   </div>
 </template>
 
 <script lang="ts">
-import Project from 'taskmaster-client/build/entities/Project';
-import Section from 'taskmaster-client/build/entities/Section';
-import Task from 'taskmaster-client/build/entities/Task';
+import { Project, Section, Task } from 'taskmaster-client';
 import { Vue, Component } from 'vue-property-decorator';
 import AddTaskComponent from '../components/AddTaskComponent.vue';
 import ShowTaskComponent from '../components/ShowTaskComponent.vue';
@@ -118,12 +157,17 @@ import ShowTaskComponent from '../components/ShowTaskComponent.vue';
   },
 })
 export default class ProjectView extends Vue {
+  hoveringOverIndex = -1;
+
+  showProjectSettings = false;
+
   selectedProject: Project = {
     _id: '',
     name: '',
     background: '',
     users: [],
     sections: [],
+    tags: [],
   };
 
   sectionsData: Array<Section> = [];
@@ -148,7 +192,13 @@ export default class ProjectView extends Vue {
     name: '',
     icon: '',
     colour: '',
+    tasks: [],
   };
+
+  // eslint-disable-next-line class-methods-use-this
+  log() {
+    console.log('test');
+  }
 
   handleCancel(): void {
     this.$root.$emit('bv::hide::modal', 'add-task-modal');
@@ -164,6 +214,7 @@ export default class ProjectView extends Vue {
     if (sectionsResult.type === 'success') {
       this.sectionsData = sectionsResult.data;
     } else {
+      // TODO: error handling
       console.log(sectionsResult.error);
       return;
     }
@@ -173,8 +224,10 @@ export default class ProjectView extends Vue {
 
       const getTasksResult = await Vue.$apiClient.getTasks(id);
       if (getTasksResult.type === 'success') {
-        Vue.set(this.tasksData, section._id, getTasksResult.data);
+        Vue.set(this.tasksData, id, getTasksResult.data);
         // this.tasksData[section._id] = getTasksResult.data;
+      } else {
+        // TODO: error handling
       }
 
       await this.$nextTick();
@@ -192,9 +245,29 @@ export default class ProjectView extends Vue {
     );
 
     if (createTaskResult.type === 'success') {
-      Vue.set(this.tasksData, this.addTaskSectionId, createTaskResult.data);
+      if (!this.tasksData[this.addTaskSectionId]) {
+        Vue.set(this.tasksData, this.addTaskSectionId, [createTaskResult.data]);
+      } else {
+        this.tasksData[this.addTaskSectionId].push(createTaskResult.data);
+      }
+
+      const section = this.sectionsData.find(
+        (s) => s._id === this.addTaskSectionId,
+      );
+
+      if (!section) {
+        // TODO: error handling
+        return;
+      }
+
+      section.tasks.push(createTaskResult.data._id);
+      return;
     }
+
+    // TODO: error handling
     console.log(createTaskResult);
+
+    this.$bvModal.hide('add-task-modal');
   }
 
   onTaskUpdated(newTask: Task): void {
@@ -222,8 +295,14 @@ export default class ProjectView extends Vue {
       console.log('updated name successfully');
       // TODO
     } else {
-      console.log('fuck you ');
+      // TODO: error handling
     }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  removeUser(id: string) {
+    console.log(`removing user ${id}`);
+    // TODO
   }
 }
 </script>
@@ -283,6 +362,36 @@ div.task {
   margin-top: auto;
   margin-bottom: auto;
   border-left: 1px solid gray;
+}
+
+#dropdown {
+  background-color: white;
+}
+
+.overview {
+  background-color: #c4c4c4;
+  border-radius: 10px;
+  margin-top: 20px;
+  margin-bottom: 10px;
+}
+
+.icon-col {
+  text-align: right;
+  margin-right: 5px;
+}
+
+.icon-col > svg:hover {
+  cursor: pointer;
+}
+
+.tag-div {
+  background-color: #c4c4c4;
+  border-radius: 10px;
+  margin-top: 20px;
+}
+
+.tag-div:hover {
+  cursor: pointer;
 }
 
 </style>
