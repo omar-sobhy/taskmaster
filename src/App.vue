@@ -27,6 +27,8 @@ export default Vue.extend({
       this.$store.commit('logout');
       if (this.$route.name !== 'Home') {
         this.$router.push('/');
+      } else {
+        window.location.reload();
       }
     },
   },

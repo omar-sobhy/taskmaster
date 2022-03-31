@@ -55,13 +55,12 @@ export default class LogInComponent extends Vue {
 
   async onSubmit(event: Event): Promise<void> {
     event.preventDefault();
+    this.$emit('login');
     const result = await Vue.$apiClient.login(this.form.username, this.form.password);
     if (result.type === 'success') {
-      this.$store.commit('setLoggedInUser', result.data);
-      this.$cookies.set('state', this.$store.state);
-
-      this.$router.push('/dashboard');
+      this.$emit('login-success', result.data);
     } else {
+      this.$emit('login-error', result.error);
       this.status = 'Error';
     }
   }
