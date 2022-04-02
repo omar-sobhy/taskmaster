@@ -83,6 +83,7 @@
         :projectName="selectedProject.name"
         @task-updated="onTaskUpdated"
         :section="selectedSectionForTaskView"
+        :projectTagIds="selectedProject.tags"
       >
       </show-task-component>
     </b-modal>
@@ -108,35 +109,9 @@
       id="project-settings-modal"
       ok-only
     >
-      <b-tabs>
-        <b-tab title="Overview">
-          <div class="overview">
-            <b-row
-              v-for="user in selectedProject.users" :key="user"
-            >
-              <b-col>
-                {{ user }}
-              </b-col>
-              <b-col class="icon-col">
-                <b-icon-x @click="removeUser(user)"/>
-              </b-col>
-            </b-row>
-          </div>
-
-          <a href="#"><b-icon-plus-circle/> Add member</a>
-        </b-tab>
-        <b-tab title="Tags">
-          <div
-            v-for="(tag, index) in selectedProject.tags"
-            :key="tag._id"
-            class="tag-div"
-            @mouseenter="hoveringOverIndex = index"
-            @mouseleave="hoveringOverIndex = -1"
-          >
-            {{ tag }}
-          </div>
-        </b-tab>
-      </b-tabs>
+      <project-settings-component
+        :project="selectedProject"
+      />
     </b-modal>
   </div>
 </template>
@@ -146,6 +121,7 @@ import { Project, Section, Task } from 'taskmaster-client';
 import { Vue, Component } from 'vue-property-decorator';
 import AddTaskComponent from '../components/AddTaskComponent.vue';
 import ShowTaskComponent from '../components/ShowTaskComponent.vue';
+import ProjectSettingsComponent from '../components/ProjectSettingsComponent.vue';
 
 @Component({
   props: {
@@ -154,6 +130,7 @@ import ShowTaskComponent from '../components/ShowTaskComponent.vue';
   components: {
     AddTaskComponent,
     ShowTaskComponent,
+    ProjectSettingsComponent,
   },
 })
 export default class ProjectView extends Vue {

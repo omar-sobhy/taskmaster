@@ -43,13 +43,16 @@
         <textarea
           v-model="comment"
           placeholder="Add comment"
-          @keypress.enter.prevent="addComment($event)"
+          @keypress.enter.exact.prevent="addComment($event)"
           id="activity-textarea"
           class="background-on-hover input-textarea"
         >
         </textarea>
 
-        <div v-for="comment in comments" :key="comment._id">
+        <div
+          v-for="comment in comments"
+          :key="comment._id"
+        >
           <b-row style="padding-bottom: 15px;">
             <b-col style="padding-left: 15px;" cols="3">
               <b>{{ users_.find(u => u._id === comment.owner).username }}</b>
@@ -59,9 +62,7 @@
                 {{ formatDate(comment.date) }}
                 {{ formatTime(comment.date) }}
               </div>
-              <div class="comment-box">
-                {{ comment.text }}
-              </div>
+              <div class="comment-box">{{ comment.text }}</div>
             </b-col>
           </b-row>
         </div>
@@ -79,7 +80,35 @@
           </b-col>
         </b-row>
         <b-row class="task-info-row">
-          <b-col style="padding-left: 5px;"> <b-icon-tag /> Tags </b-col>
+          <b-col
+            style="padding-left: 5px; cursor: pointer;"
+          >
+            <b-icon-tag /> Tags
+            <b-dropdown
+              id="select-tag-dropdown"
+              variant="white"
+            >
+              <b-dropdown-header>
+                <div>
+                  Add tags
+                </div>
+              </b-dropdown-header>
+              <b-dropdown-item-button
+                v-for="tag in projectTags"
+                :key="tag._id"
+                @click.prevent="log"
+              >
+                <b-icon-check
+                  v-if="tagSelected(tag)"
+                />
+                {{ tag.name }}
+              </b-dropdown-item-button>
+            </b-dropdown>
+          </b-col>
+          <b-col>
+            <div v-for="tag in task.tags" :key="tag._id">
+            </div>
+          </b-col>
         </b-row>
         <b-row class="task-info-row">
           <b-col style="padding-left: 5px;"> <b-icon-eye /> Watchers </b-col>
@@ -136,6 +165,7 @@ import Task from 'taskmaster-client/build/entities/Task';
 import { User } from 'taskmaster-client/build/entities/User';
 import Comment from 'taskmaster-client/build/entities/Comment';
 import { Component, Vue } from 'vue-property-decorator';
+import { Tag } from 'taskmaster-client';
 
 const ShowTaskComponentProps = Vue.extend({
   props: {
@@ -143,6 +173,7 @@ const ShowTaskComponentProps = Vue.extend({
     users: Array,
     projectName: String,
     section: Object,
+    projectTagIds: Array,
   },
 });
 
@@ -152,6 +183,7 @@ const ShowTaskComponentProps = Vue.extend({
     users: Array,
     projectName: String,
     section: Object,
+    projectTagIds: Array,
   },
 })
 export default class ShowTaskComponent extends ShowTaskComponentProps {
@@ -175,6 +207,13 @@ export default class ShowTaskComponent extends ShowTaskComponentProps {
   comment = '';
 
   comments_: Array<Comment> = [];
+
+  projectTags: Array<Tag> = [];
+
+  log(e: Event) {
+    console.log(`Got event ${e}`);
+    console.log(this.projectTags);
+  }
 
   // eslint-disable-next-line class-methods-use-this
   formatDate(date: Date): string {
@@ -233,6 +272,13 @@ export default class ShowTaskComponent extends ShowTaskComponentProps {
       this.comments_ = commentsResult.data;
     } else {
       console.log(`Error while retrieving comments: ${commentsResult.error}`);
+    }
+
+    const tagsResult = await Vue.$apiClient.getTagsData(this.projectTagIds as string[]);
+    if (tagsResult.type === 'success') {
+      this.projectTags = tagsResult.data;
+    } else {
+      console.log(`Error while retrieving tag data: ${tagsResult.error}`);
     }
 
     const textAreas = document.querySelectorAll('.input-textarea');
@@ -314,6 +360,9 @@ export default class ShowTaskComponent extends ShowTaskComponentProps {
   }
 
   async addComment(event: KeyboardEvent): Promise<void> {
+    if (this.comment.trim() === '') {
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     event.target.blur();
@@ -325,6 +374,11 @@ export default class ShowTaskComponent extends ShowTaskComponentProps {
     } else {
       console.log(`Error: ${commentResult.error}`);
     }
+  }
+
+  tagSelected(tag: Tag): boolean {
+    const targetTagId = this.task.tags.find((t) => t === tag._id);
+    return !!targetTagId;
   }
 }
 </script>
@@ -384,6 +438,7 @@ export default class ShowTaskComponent extends ShowTaskComponentProps {
   margin-right: 30px;
   padding-left: 5px;
   padding-bottom: 5px;
+  white-space: pre-wrap;
 }
 
 hr {
