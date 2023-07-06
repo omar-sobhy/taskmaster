@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="container" v-if="!this.$cookies.get('state')">
+    <div class="container card" v-if="!this.$cookies.get('state')">
       <div class="row" id="header">
         <div class="col"
           v-bind:class="{ inactive: activeColumn !== 0 }"

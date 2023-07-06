@@ -31,45 +31,59 @@
           </b-dropdown>
       </b-row>
     </div>
-    <div class="container-fluid">
-      <b-row no-gutters>
-        <b-col
-          v-for="(section, index) in sectionsData"
-          :key="section._id"
-          :style="{ background: index % 2 === 0 ? '#f2f4f5' : '#ebeff0' }"
-          class="section-column"
-        >
-          <h4 class="section-header" :style="{ background: section.colour }">
-            <input
-              v-model="section.name"
-              style="border: 0px; margin-left: 15px; outline: none; font-weight: bold"
-              :style="{ background: section.colour }"
-              @change="updateSectionName(section._id, section.name)"
-            />
-          </h4>
-          <div class="tasks-container">
-            <div v-if="section.tasks.length === 0" style="text-align: center">
+    <div class="section-container">
+      <b-col
+        v-for="(section, index) in sectionsData"
+        :key="section._id"
+        :style="{ background: index % 2 === 0 ? '#f2f4f5' : '#ebeff0' }"
+        class="section-column px-0"
+      >
+        <h4 class="section-header" :style="{ background: section.colour }">
+          <input
+            v-model="section.name"
+            style="border: 0px; margin-left: 15px; outline: none; font-weight: bold"
+            :style="{ background: section.colour }"
+            @change="updateSectionName(section._id, section.name)"
+          />
+        </h4>
+        <b-container>
+          <b-row v-if="section.tasks.length === 0" class="text-center">
+            <b-col>
               <b>No tasks</b><br>
               Drag tasks here or click + <br>to add new tasks.
+            </b-col>
+          </b-row>
+          <b-container>
+            <div v-for="task in tasksData[section._id]" :key="task._id"
+              class="w-100 task"
+              style="cursor: pointer;"
+              @click="selectedSectionForTaskView = section; selectedTaskId = task._id;"
+              v-b-modal.show-task-modal
+            >
+              {{ task.name }}
             </div>
-            <div v-else class="w-75">
-              <div v-for="task in tasksData[section._id]" :key="task._id"
-                class="w-100 task"
-                style="cursor: pointer;"
-                @click="selectedSectionForTaskView = section; selectedTaskId = task._id;"
-                v-b-modal.show-task-modal
-              >
-                {{ task.name }}
-              </div>
-            </div>
+          </b-container>
+          <b-row class="text-center justify-content-center">
             <b-icon-plus-circle
               style="cursor: pointer;"
               @click="addTaskSectionId = section._id"
               v-b-modal.add-task-modal
             />
+          </b-row>
+        </b-container>
+      </b-col>
+      <b-col
+        cols="2"
+        :style="{ background: sectionsData.length % 2 === 0 ? '#f2f4f5' : '#ebeff0' }"
+      >
+          <div class="ml-3 mt-2">
+            <h4>
+              <a href="#" v-b-modal.create-section-modal>+ Add section</a>
+            </h4>
           </div>
-        </b-col>
-      </b-row>
+          <div class="tasks-container">
+          </div>
+      </b-col>
     </div>
     <b-modal
       id="show-task-modal"
@@ -113,12 +127,18 @@
         :project="selectedProject"
       />
     </b-modal>
+
+    <create-section-component
+      @ok="handleCreateSection"
+      modal-id="create-section-modal"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import { Project, Section, Task } from 'taskmaster-client';
 import { Vue, Component } from 'vue-property-decorator';
+import CreateSectionComponent from '@/components/CreateSectionComponent.vue';
 import AddTaskComponent from '../components/AddTaskComponent.vue';
 import ShowTaskComponent from '../components/ShowTaskComponent.vue';
 import ProjectSettingsComponent from '../components/ProjectSettingsComponent.vue';
@@ -131,6 +151,7 @@ import ProjectSettingsComponent from '../components/ProjectSettingsComponent.vue
     AddTaskComponent,
     ShowTaskComponent,
     ProjectSettingsComponent,
+    CreateSectionComponent,
   },
 })
 export default class ProjectView extends Vue {
@@ -187,28 +208,37 @@ export default class ProjectView extends Vue {
       this.selectedProject = projectsResult.data.find((p) => p._id === this.projectId) as Project;
     }
 
+    try {
+      const sectionsPromise = await this.showSections();
+    } catch (error) {
+      console.log(`Error: ${JSON.stringify(error, null, 2)})}`);
+    }
+  }
+
+  async showSections() {
     const sectionsResult = await Vue.$apiClient.getProjectSections(this.projectId);
     if (sectionsResult.type === 'success') {
       this.sectionsData = sectionsResult.data;
     } else {
       // TODO: error handling
       console.log(sectionsResult.error);
-      return;
+      return Promise.reject();
     }
 
-    sectionsResult.data.forEach(async (section) => {
+    const promises = sectionsResult.data.map(async (section) => {
       const id = section._id;
 
       const getTasksResult = await Vue.$apiClient.getTasks(id);
       if (getTasksResult.type === 'success') {
         Vue.set(this.tasksData, id, getTasksResult.data);
-        // this.tasksData[section._id] = getTasksResult.data;
       } else {
         // TODO: error handling
       }
 
       await this.$nextTick();
     });
+
+    return Promise.all(promises);
   }
 
   async handleAddTask(
@@ -238,6 +268,9 @@ export default class ProjectView extends Vue {
       }
 
       section.tasks.push(createTaskResult.data._id);
+
+      this.$bvModal.hide('add-task-modal');
+
       return;
     }
 
@@ -272,6 +305,27 @@ export default class ProjectView extends Vue {
       console.log('updated name successfully');
       // TODO
     } else {
+      // TODO: error handling
+    }
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  async handleCreateSection(
+    { name, colour } : { name: string, colour: string, },
+  ) {
+    const addSectionResult = await Vue.$apiClient.createSections(this.selectedProject._id, [{
+      name,
+      colour,
+      icon: '',
+    }]);
+
+    if (addSectionResult.type === 'success') {
+      console.log('Section created successfully');
+      this.sectionsData.push(addSectionResult.data[0]);
+      // const index = this.selectedProject.sections.length;
+      // Vue.set(this.selectedProject.sections, index, addSectionResult.data[0]._id);
+    } else {
+      console.log(`Error + ${addSectionResult.error.message}`);
       // TODO: error handling
     }
   }
@@ -371,4 +425,12 @@ div.task {
   cursor: pointer;
 }
 
+.section-container {
+  display: flex;
+  flex-direction: row;
+}
+
+body {
+  overflow-x: scroll;
+}
 </style>
