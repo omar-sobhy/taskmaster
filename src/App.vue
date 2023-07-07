@@ -1,85 +1,77 @@
-<script setup lang="ts">
-import { RouterLink, RouterView } from 'vue-router'
-import HelloWorld from './components/HelloWorld.vue'
-</script>
-
 <template>
-  <header>
-    <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
-
-    <div class="wrapper">
-      <HelloWorld msg="You did it!" />
-
-      <nav>
-        <RouterLink to="/">Home</RouterLink>
-        <RouterLink to="/about">About</RouterLink>
-      </nav>
+  <div>
+    <div id="login-container" v-if="store.username !== ''">
+      Logged in as {{ store.username }}
+      <a href="" @click.prevent="logout"> (log out) </a>
+      <br />
     </div>
-  </header>
-
-  <RouterView />
+    <div id="nav">
+      <router-link to="/">Home</router-link> |
+      <router-link to="/dashboard">Dashboard</router-link>
+    </div>
+    <router-view />
+    <div class="modal" id="error-modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="model-header">
+            <div class="modal-title"><h5>An error occurred.</h5></div>
+          </div>
+          <div class="model-body">{{ errorStore.message }}</div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" data-bs-dismiss="modal">Ok</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
-<style scoped>
-header {
-  line-height: 1.5;
-  max-height: 100vh;
-}
+<script setup lang="ts">
+import { useUserStore } from '@/stores/user';
+import { useRoute, useRouter } from 'vue-router';
+import { useErrorStore } from './stores/error';
 
-.logo {
-  display: block;
-  margin: 0 auto 2rem;
-}
+const store = useUserStore();
 
-nav {
-  width: 100%;
-  font-size: 12px;
-  text-align: center;
-  margin-top: 2rem;
-}
+const errorStore = useErrorStore();
 
-nav a.router-link-exact-active {
-  color: var(--color-text);
-}
+const route = useRoute();
+const router = useRouter();
 
-nav a.router-link-exact-active:hover {
-  background-color: transparent;
-}
-
-nav a {
-  display: inline-block;
-  padding: 0 1rem;
-  border-left: 1px solid var(--color-border);
-}
-
-nav a:first-of-type {
-  border: 0;
-}
-
-@media (min-width: 1024px) {
-  header {
-    display: flex;
-    place-items: center;
-    padding-right: calc(var(--section-gap) / 2);
+function logout() {
+  store.username = '';
+  if (route.name !== 'Home') {
+    router.push('/');
+  } else {
+    window.location.reload();
   }
+}
+</script>
 
-  .logo {
-    margin: 0 2rem 0 0;
-  }
+<style scoped lang="scss">
+#app {
+  font-family: Avenir, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #2c3e50;
+}
 
-  header .wrapper {
-    display: flex;
-    place-items: flex-start;
-    flex-wrap: wrap;
-  }
+#login-container {
+  padding-left: 30px;
+  padding-top: 10px;
+}
 
-  nav {
-    text-align: left;
-    margin-left: -1rem;
-    font-size: 1rem;
+#nav {
+  padding: 30px;
+  padding-top: 0;
 
-    padding: 1rem 0;
-    margin-top: 1rem;
+  a {
+    font-weight: bold;
+    color: #2c3e50;
+
+    &.router-link-exact-active {
+      color: #42b983;
+    }
   }
 }
 </style>
