@@ -166,6 +166,7 @@ import { inject } from 'vue';
 import { onMounted } from 'vue';
 
 import type { ShowErrorMessageFunction } from '@/types/ShowError.types';
+import { useRouter } from 'vue-router';
 
 const userStore = useUserStore();
 
@@ -191,6 +192,8 @@ const styles = ref(
 
 const apiClient: Client = inject('$apiClient')!;
 const showError: ShowErrorMessageFunction = inject('showError')!;
+
+const router = useRouter();
 
 let projects = ref([] as Project[]);
 
@@ -234,6 +237,10 @@ async function createProject() {
       showError(result.error.message);
     }
   }
+}
+
+function handleProjectRedirect(event: Event, index: number) {
+  router.push(`/projects/${projects.value[index]._id}`);
 }
 
 onMounted(async () => {
