@@ -1,6 +1,7 @@
 import 'bootstrap';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import 'fontawesome-free/css/all.min.css';
+import '@vuepic/vue-datepicker/dist/main.css';
 
 import { createApp, h } from 'vue';
 import { createPinia } from 'pinia';

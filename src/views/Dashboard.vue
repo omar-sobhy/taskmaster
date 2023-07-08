@@ -110,19 +110,26 @@
                 <div class="col">
                   <div class="container">
                     <div class="row gy-2 row-cols-4">
-                      <div
-                        class="col rounded-5"
-                        v-for="(_, index) in colours"
+                      <a
+                        class="col d-flex justify-content-center rounded-5 text-decoration-none"
+                        href="#"
                         @click="setSelected(index)"
+                        v-for="(colour, index) in colours"
                       >
                         <div
-                          class="rounded-5 mb-2 w-75"
-                          style="cursor: pointer; border-radius: 50%"
+                          class="rounded-5 w-75"
+                          :class="{ 'focus-ring': colour === selectedColour }"
+                          style="
+                            border-radius: 50%;
+                            --bs-focus-ring-width: 2px;
+                            --bs-focus-ring-color: black;
+                          "
                           :style="styles[index]"
+                          tabindex="-1"
                         >
                           &nbsp;
                         </div>
-                      </div>
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -219,7 +226,6 @@ function setSelected(idx: number) {
       styles.value[i]['border'] = '';
     }
   }
-  styles.value[idx]['border'] = '2px solid black';
 
   selectedColour = colours[idx];
 }
