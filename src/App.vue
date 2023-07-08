@@ -1,13 +1,15 @@
 <template>
-  <div>
+  <div class="h-100">
     <div id="login-container" v-if="store.username !== ''">
       Logged in as {{ store.username }}
       <a href="" @click.prevent="logout"> (log out) </a>
       <br />
     </div>
     <div id="nav">
-      <router-link to="/">Home</router-link> |
-      <router-link to="/dashboard">Dashboard</router-link>
+      <router-link to="/">Home</router-link>
+      <span v-if="store.username !== ''">
+        | <router-link to="/dashboard">Dashboard</router-link></span
+      >
     </div>
     <router-view />
     <div class="modal" id="error-modal">
@@ -23,6 +25,16 @@
         </div>
       </div>
     </div>
+    <div id="loading-modal" class="loading-modal">
+      <div class="loading-modal-content h-25 rounded-3">
+        <div class="loading-modal-body d-flex align-items-center justify-content-center h-100">
+          Loading... &nbsp;
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -30,6 +42,7 @@
 import { useUserStore } from '@/stores/user';
 import { useRoute, useRouter } from 'vue-router';
 import { useErrorStore } from './stores/error';
+import { useCookies } from 'vue3-cookies';
 
 const store = useUserStore();
 
@@ -38,8 +51,13 @@ const errorStore = useErrorStore();
 const route = useRoute();
 const router = useRouter();
 
+const { cookies } = useCookies();
+
 function logout() {
   store.username = '';
+  cookies.remove('username');
+  cookies.remove('Authorization');
+
   if (route.name !== 'Home') {
     router.push('/');
   } else {
@@ -73,5 +91,22 @@ function logout() {
       color: #42b983;
     }
   }
+}
+
+#loading-modal {
+  display: none;
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 2000;
+  width: 100%;
+  height: 100%;
+  background-color: rgb(0, 0, 0, 0.4);
+}
+
+.loading-modal-content {
+  margin: 15% auto;
+  width: 20%;
+  background-color: white;
 }
 </style>

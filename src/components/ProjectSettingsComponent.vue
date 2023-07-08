@@ -216,7 +216,7 @@ async function updateTag(
       tag.colour = colour;
     }
 
-    emit('tagUpdated', tag);
+    emit('tagUpdated', { tag });
   } catch (error) {
     showError(error as string);
   }

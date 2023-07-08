@@ -3,10 +3,6 @@
     <div class="d-flex flex-column">
       <div>
         <div class="col-6">
-          <h2>
-            <i class="fa fa-bars"></i>
-          </h2>
-          <div class="v-divider">&nbsp;</div>
           <div class="dropdown">
             <button
               class="btn dropdown-toggle"
@@ -82,11 +78,13 @@
 
       <div class="d-flex sections-container">
         <div v-for="(section, index) in sections" class="container tasks-container">
+          <!-- Section header -->
           <div class="row mb-2" :style="{ background: section.colour }">
             <div class="col" style="width: 300px">
               <h5>{{ section.name }}</h5>
             </div>
           </div>
+          <!-- Task card -->
           <div
             class="row d-flex justify-content-center"
             v-for="task in sectionTasks[section._id]"
@@ -103,8 +101,8 @@
               "
             >
               <div class="container card-body">
-                <div class="row mb-3">
-                  <div class="col col-auto">{{ task.name }}</div>
+                <div class="row" :class="{ 'mb-3': taskTags[task._id]?.length !== 0 }">
+                  <div class="col col-auto text-start p-0">{{ task.name }}</div>
                 </div>
                 <div class="row">
                   <div
@@ -126,8 +124,17 @@
               <strong>No tasks</strong>
               Drag tasks here or click +<br />
               to add new tasks.<br />
-              <i class="fa fa-plus-circle"></i>
             </div>
+          </div>
+          <div class="text-center">
+            <a
+              href="#"
+              data-bs-toggle="modal"
+              data-bs-target=".add-task-modal"
+              @click="sectionIdForCreateTask = section._id"
+            >
+              <i class="fa fa-plus-circle"></i>
+            </a>
           </div>
         </div>
         <div class="container">
@@ -167,10 +174,73 @@
               :project="project"
               :tags="tags"
               @tag-added="addTag"
-              @tag-removed="removeTag"
+              @tag-deleted="removeTag"
               @tag-updated="updateTag"
             />
           </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal add-task-modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Create new task</h5>
+          </div>
+          <form>
+            <div class="modal-body container">
+              <div class="row mb-3">
+                <label for="input-task-name" class="col-4 col-form-label">Task name</label>
+                <div class="col-8">
+                  <input
+                    id="input-task-name"
+                    class="form-control"
+                    type="text"
+                    required
+                    v-model="newTask.name"
+                  />
+                  <div class="invalid-feedback">Task name cannot be empty.</div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-duedate" class="col-4 col-form-label">Due date</label>
+                <div class="col-8">
+                  <input
+                    id="input-duedate"
+                    class="form-control"
+                    type="date"
+                    v-model="newTask.dueDate"
+                  />
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="input-assignee" class="col-4 col-form-label">Assignee</label>
+                <div class="col-8">
+                  <select id="input-assignee" class="form-control" v-model="newTask.assignee">
+                    <option :value="undefined">N/A</option>
+                    <option v-for="user in users" :value="user._id">
+                      {{ user.username }}
+                    </option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button class="btn btn-secondary" type="reset" data-bs-dismiss="modal">Cancel</button>
+              <button
+                class="btn btn-primary"
+                type="submit"
+                @click="
+                  createTask($event, sectionIdForCreateTask, newTask.name, {
+                    dueDate: newTask.dueDate,
+                    assignee: newTask.assignee,
+                  })
+                "
+              >
+                Create task
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
@@ -185,6 +255,8 @@ import { useRoute } from 'vue-router';
 import ShowTaskComponent from '@/components/ShowTaskComponent.vue';
 import type { ShowErrorMessageFunction } from 'src/types/ShowError.types';
 import ProjectSettingsComponent from '@/components/ProjectSettingsComponent.vue';
+import moment from 'moment';
+import type { EventEmitter } from 'stream';
 
 const route = useRoute();
 
@@ -210,15 +282,23 @@ const users = ref<User[]>([]);
 
 const tags = ref<Tag[]>([]);
 
+const newTask = ref<{ name: string; assignee?: string; dueDate?: Date }>({
+  name: '',
+  assignee: undefined,
+  dueDate: undefined,
+});
+
 const selectedTaskId = ref('');
 
 const selectedSectionName = ref('');
 
-function updateTask({ task }: { task: Ref<Task> }) {
+const sectionIdForCreateTask = ref('');
+
+function updateTask({ task }: { task: Task }) {
   Object.entries(sectionTasks.value).forEach(([sectionId, tasks]) => {
     tasks.forEach((task_, index) => {
-      if (task_._id === task.value._id) {
-        sectionTasks.value[sectionId][index] = task.value;
+      if (task_._id === task._id) {
+        sectionTasks.value[sectionId][index] = task;
       }
     });
   });
@@ -237,6 +317,42 @@ function removeTag({ tag }: { tag: Tag }) {
 function updateTag({ tag }: { tag: Tag }) {
   const idx = tags.value.findIndex((t) => t._id === tag._id);
   tags.value[idx] = tag;
+
+  Object.values(taskTags.value).forEach((tags) => {
+    tags.forEach((tag_) => {
+      if (tag_._id === tag._id) {
+        Object.assign(tag_, tag);
+      }
+    });
+  });
+}
+
+async function createTask(
+  event: Event,
+  sectionId: string,
+  name: string,
+  { dueDate, assignee }: Partial<{ dueDate: Date; assignee: string }>,
+) {
+  const nameEl = document.getElementById('input-task-name') as HTMLInputElement;
+
+  if (!nameEl.checkValidity()) {
+    return;
+  }
+
+  event.preventDefault();
+
+  const date = dueDate ? moment(dueDate).format('YYYY-DD-MM') : undefined;
+
+  try {
+    const createTaskResult = await apiClient.createTask(sectionId, name, date, assignee);
+    if (createTaskResult.type !== 'success') {
+      throw createTaskResult.error.message;
+    }
+
+    sectionTasks.value[sectionId].push(createTaskResult.data);
+  } catch (error) {
+    showError(error as string);
+  }
 }
 
 onMounted(async () => {

@@ -28,7 +28,11 @@
         </div>
         <div class="row" v-for="(project, index) in projects" :key="project._id">
           <div class="col">
-            <a @click="handleProjectRedirect($event, index)">
+            <a
+              class="project-link w-100 d-block rounded-2 text-decoration-none"
+              href="#"
+              @click="handleProjectRedirect($event, index)"
+            >
               {{ project.name }}
             </a>
           </div>
@@ -246,6 +250,8 @@ async function createProject() {
 }
 
 function handleProjectRedirect(event: Event, index: number) {
+  event.preventDefault();
+  event.stopPropagation();
   router.push(`/projects/${projects.value[index]._id}`);
 }
 
@@ -263,3 +269,9 @@ setInterval(() => {
   date.value = moment().format('dddd DD/MM/YYYY');
 }, 1000);
 </script>
+
+<style scoped>
+.project-link:hover {
+  background-color: lightgrey;
+}
+</style>

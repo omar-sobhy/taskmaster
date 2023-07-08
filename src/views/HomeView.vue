@@ -32,20 +32,6 @@
     <div class="container" style="text-align: center" v-else>
       You are logged in! Click on Dashboard to continue.
     </div>
-    <div class="modal" id="loading-modal">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">
-            <h5 class="modal-title">Loading...</h5>
-          </div>
-          <div class="modal-body" style="background: white">
-            <div class="spinner-border" role="status">
-              <span class="visually-hidden">Loading...</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </template>
 
@@ -68,25 +54,23 @@ const router = useRouter();
 const { cookies } = useCookies();
 
 function handleLogin() {
-  const modal = new Modal(document.getElementById('loading-modal')!);
-  modal.show();
+  const modal = document.querySelector('#loading-modal') as HTMLElement;
+  modal.style.display = 'block';
 }
 
 function handleLoginSuccess(user: User) {
   userStore.$state.username = user.username;
   cookies.set('username', user.username);
 
-  debugger;
-
-  const modal = Modal.getInstance(document.getElementById('loading-modal')!)!;
-  modal.hide();
+  const modal = document.querySelector('#loading-modal') as HTMLElement;
+  modal.style.display = 'none';
 
   router.push('/dashboard');
 }
 
 function handleLoginError() {
-  const modal = Modal.getInstance(document.getElementById('loading-modal')!)!;
-  modal.hide();
+  const modal = document.querySelector('#loading-modal') as HTMLElement;
+  modal.style.display = 'none';
 }
 </script>
 

@@ -23,9 +23,19 @@
       <div class="col-7 border-end border-dark">
         <textarea
           placeholder="This task has no description."
-          class="form-control overflow-hidden taskmaster-textarea border-0"
+          class="form-control overflow-hidden taskmaster-textarea border-0 my-2"
           style="resize: none"
-          v-model="task.description"
+          :value="task.description"
+          @change="(event) => { task.description = (event.target as HTMLInputElement).value }"
+          @keydown="(event) => { 
+            if ((event as KeyboardEvent).code === 'Enter' && !(event as KeyboardEvent).ctrlKey) {
+              task.description = (event.target as HTMLInputElement).value;
+              (event.target as HTMLElement).blur();
+            } else if ((event as KeyboardEvent).code === 'Enter' && (event as KeyboardEvent).ctrlKey) {
+              (event.target as HTMLInputElement).value += '\n';
+              updateTextAreaHeight();
+            }
+          }"
         ></textarea>
         <span>Activity <i class="fas fa-caret-down"></i></span>
         <textarea
@@ -315,6 +325,23 @@ watch(
 );
 
 watch(
+  () => task.value.description,
+  async (description?: string) => {
+    const updateTaskResult = await apiClient.updateTask(props.id, {
+      description,
+    });
+
+    if (updateTaskResult.type !== 'success') {
+      showError(updateTaskResult.error.message);
+    } else {
+      emit('taskChanged', {
+        task,
+      });
+    }
+  },
+);
+
+watch(
   () => props.id,
   async (id: string) => {
     if (id && id !== '') {
@@ -339,12 +366,24 @@ watch(
         }
 
         watchers.value = getUsersResult.data;
+
+        updateTextAreaHeight();
       } catch (error) {
         showError(error as string);
       }
     }
   },
 );
+
+function updateTextAreaHeight() {
+  const textAreas = document.querySelectorAll('.taskmaster-textarea');
+  textAreas.forEach((t) => {
+    t.setAttribute(
+      'style',
+      `height: ${t.scrollHeight}px; overflow-y: hidden; resize: none; width: 100%;`,
+    );
+  });
+}
 
 onMounted(() => {
   const textAreas = document.querySelectorAll('.taskmaster-textarea');
@@ -364,5 +403,13 @@ onMounted(() => {
 <style>
 .dp__input {
   height: 4rem;
+}
+
+.taskmaster-textarea:focus {
+  outline: 1px solid grey;
+}
+
+.taskmaster-textarea:hover {
+  background-color: var(--bs-gray-200);
 }
 </style>
