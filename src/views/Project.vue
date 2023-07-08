@@ -76,6 +76,7 @@
         </div>
       </div>
 
+      <!-- Section -->
       <div class="d-flex sections-container">
         <div v-for="(section, index) in sections" class="container tasks-container">
           <!-- Section header -->
@@ -106,7 +107,7 @@
                 </div>
                 <div class="row">
                   <div
-                    class="col col-auto badge text-truncate"
+                    class="col col-auto badge text-truncate me-2 mb-2"
                     v-for="tag in taskTags[task._id]"
                     :style="{
                       'background-color': tag.colour,
@@ -158,6 +159,7 @@
               :projectTags="tags"
               :sectionName="selectedSectionName"
               @taskChanged="updateTask"
+              @taskTagsChanged="updateTaskTags"
             />
           </div>
         </div>
@@ -256,7 +258,6 @@ import ShowTaskComponent from '@/components/ShowTaskComponent.vue';
 import type { ShowErrorMessageFunction } from 'src/types/ShowError.types';
 import ProjectSettingsComponent from '@/components/ProjectSettingsComponent.vue';
 import moment from 'moment';
-import type { EventEmitter } from 'stream';
 
 const route = useRoute();
 
@@ -325,6 +326,10 @@ function updateTag({ tag }: { tag: Tag }) {
       }
     });
   });
+}
+
+function updateTaskTags({ taskId, tags }: { taskId: string; tags: Ref<Tag[]> }) {
+  taskTags.value[taskId] = tags.value;
 }
 
 async function createTask(

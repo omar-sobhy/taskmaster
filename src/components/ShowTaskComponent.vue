@@ -103,7 +103,7 @@
                   <div class="col">
                     <div>
                       <div
-                        class="badge badge-pill"
+                        class="badge badge-pill me-2 mb-2"
                         v-for="tag in tags"
                         :style="{
                           'background-color': tag.colour,
@@ -205,7 +205,7 @@ const props = defineProps<{
   sectionName: string;
 }>();
 
-const emit = defineEmits(['taskChanged']);
+const emit = defineEmits(['taskChanged', 'taskTagsChanged']);
 
 const apiClient: Client = inject('$apiClient')!;
 const showError: ShowErrorMessageFunction = inject('showError')!;
@@ -258,6 +258,7 @@ function formatTime(date?: Date) {
 }
 
 async function toggleTag(id: string) {
+  debugger;
   const newTags = tags.value.map((t) => t._id);
 
   const type = task.value.tags?.find((t) => t === id) ? 'remove' : 'add';
@@ -277,10 +278,17 @@ async function toggleTag(id: string) {
     if (type === 'remove') {
       const index = tags.value.findIndex((t) => t._id === id);
       tags.value.splice(index, 1);
+      task.value.tags?.splice(index, 1);
     } else {
       const tag = props.projectTags.find((t) => t._id === id)!;
       tags.value.push(tag);
+      task.value.tags?.push(id);
     }
+
+    emit('taskTagsChanged', {
+      taskId: props.id,
+      tags: tags,
+    });
   } else {
   }
 }

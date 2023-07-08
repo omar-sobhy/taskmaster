@@ -21,7 +21,6 @@ function makeClient(options: { authorizationCookie?: string }) {
   const basePort = baseProtocol.startsWith('https') ? 3001 : 3000;
 
   const basePath = `${baseProtocol}//${baseHost}:${basePort}`;
-  console.log('Base path', basePath);
 
   return new Client(basePath, options);
 }
