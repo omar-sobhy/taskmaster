@@ -35,7 +35,7 @@
         tabindex="0"
       >
         <div class="container">
-          <div class="row" v-for="user in users">
+          <div class="row" v-for="user in users" :key="user._id">
             <div class="col col-11">{{ user.username }}</div>
             <div class="col col-1" data-bs-placement="right">
               <a href="#" @click="removeUser(user)"><i class="fa fa-times"></i></a>
@@ -51,7 +51,7 @@
         tabindex="0"
       >
         <div class="container">
-          <div v-for="(tag, index) in tags" class="row background-secondary">
+          <div v-for="(tag, index) in tags" class="row background-secondary" :key="tag._id">
             <div class="col" @mouseleave="hoveringIndex = -1" @mouseenter="hoveringIndex = index">
               <div class="container">
                 <div class="row">
@@ -71,7 +71,12 @@
                   </div>
                   <div class="col-auto">
                     <div v-if="!editingTag && hoveringIndex === index">
-                      <a href="#" v-for="colour in colours" @click="updateTag(tag._id, { colour })">
+                      <a
+                        href="#"
+                        v-for="(colour, index) in colours"
+                        @click="updateTag(tag._id, { colour })"
+                        :key="index"
+                      >
                         <i class="fas fa-circle me-2" :style="{ color: colour }"></i>
                       </a>
                       <a href="#" @click="deleteTag(tag._id)">

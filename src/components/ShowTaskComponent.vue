@@ -12,7 +12,12 @@
       <div class="col-4">
         <select class="form-select" v-model="task.assignee">
           <option :value="undefined" :selected="!!task.assignee">N/A</option>
-          <option v-for="user in users" :value="user._id" :selected="user._id === task.assignee">
+          <option
+            v-for="user in users"
+            :value="user._id"
+            :selected="user._id === task.assignee"
+            :key="user._id"
+          >
             {{ user.username }}
           </option>
         </select>
@@ -90,7 +95,7 @@
                         <li>
                           <a class="dropdown-item" href="#">Add tags</a>
                         </li>
-                        <li v-for="tag in projectTags">
+                        <li v-for="tag in projectTags" :key="tag._id">
                           <a class="dropdown-item" href="#" @click="toggleTag(tag._id)">{{
                             tag.name
                           }}</a>
@@ -105,6 +110,7 @@
                       <div
                         class="badge badge-pill me-2 mb-2"
                         v-for="tag in tags"
+                        :key="tag._id"
                         :style="{
                           'background-color': tag.colour,
                           color: tag.colour ? 'white' : 'black',
@@ -123,7 +129,11 @@
               <i class="far fa-eye"></i>
               <span>Watchers</span>
               <div>
-                <div class="badge badge-pill badge-primary" v-for="watcher in watchers">
+                <div
+                  class="badge badge-pill badge-primary"
+                  v-for="watcher in watchers"
+                  :key="watcher._id"
+                >
                   {{ watcher.username }}
                 </div>
               </div>
@@ -258,7 +268,6 @@ function formatTime(date?: Date) {
 }
 
 async function toggleTag(id: string) {
-  debugger;
   const newTags = tags.value.map((t) => t._id);
 
   const type = task.value.tags?.find((t) => t === id) ? 'remove' : 'add';
@@ -290,6 +299,7 @@ async function toggleTag(id: string) {
       tags: tags,
     });
   } else {
+    showError(`An error occurred while toggling tag: ${result.error.message}`);
   }
 }
 

@@ -78,71 +78,130 @@
 
       <!-- Section -->
       <div class="d-flex sections-container">
-        <div v-for="(section, index) in sections" class="container tasks-container">
+        <div
+          v-for="(section, index) in sections"
+          class="container tasks-container"
+          v-bind:key="section._id"
+          draggable="true"
+        >
           <!-- Section header -->
-          <div class="row mb-2" :style="{ background: section.colour }">
-            <div class="col" style="width: 300px">
-              <h5>{{ section.name }}</h5>
+          <div
+            class="row mb-2 section-header text-light"
+            :style="{ background: section.colour }"
+            @mouseenter="hoveringOver = index"
+            @mouseleave="hoveringOver = -1"
+          >
+            <div class="col d-flex justify-content-between align-items-center" style="width: 300px">
+              <span class="fs-5 my-2">{{ section.name }}</span>
+              <div class="dropdown" :class="hoveringOver === index ? '' : 'd-none'">
+                <a href="#" class="text-decoration-none text-light" data-bs-toggle="dropdown">
+                  <i class="fas fa-ellipsis-h"></i>
+                </a>
+                <ul class="dropdown-menu">
+                  <li>
+                    <a class="dropdown-item" href="#">
+                      <i class="fa fa-smile"></i>
+                      Change icon
+                    </a>
+                  </li>
+                  <li>
+                    <a class="dropdown-item" href="#">
+                      <i class="fa fa-pen"></i>
+                      Add description</a
+                    >
+                  </li>
+                  <li><hr class="dropdown-divider" /></li>
+                  <li>
+                    <a
+                      class="dropdown-item text-danger text-center"
+                      href="#"
+                      @click="showDeleteSectionModal(section)"
+                    >
+                      Delete section
+                    </a>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
-          <!-- Task card -->
+          <!-- Section body -->
           <div
-            class="row d-flex justify-content-center"
-            v-for="task in sectionTasks[section._id]"
-            v-if="section.tasks.length !== 0"
+            class="h-100"
+            ondrop="(event) => {console.dir(event); event.preventDefault();}"
+            ondragover="(event) => {console.dir(event); event.preventDefault();}"
           >
+            <!-- Task row -->
             <div
-              class="card w-75 d-flex text-center mb-2"
-              style="cursor: pointer"
-              data-bs-toggle="modal"
-              data-bs-target=".task-modal"
-              @click="
-                selectedTaskId = task._id;
-                selectedSectionName = section.name;
-              "
+              class="row d-flex justify-content-center"
+              v-for="task in sectionTasks[section._id]"
+              v-if="section.tasks.length !== 0"
+              :key="task._id"
             >
-              <div class="container card-body">
-                <div class="row" :class="{ 'mb-3': taskTags[task._id]?.length !== 0 }">
-                  <div class="col col-auto text-start p-0">{{ task.name }}</div>
-                </div>
-                <div class="row">
-                  <div
-                    class="col col-auto badge text-truncate me-2 mb-2"
-                    v-for="tag in taskTags[task._id]"
-                    :style="{
-                      'background-color': tag.colour,
-                      color: tag.colour ? undefined : 'black',
-                    }"
-                  >
-                    {{ tag.name }}
+              <!-- Task card -->
+              <div
+                class="card w-75 d-flex text-center mb-2"
+                style="cursor: pointer"
+                data-bs-toggle="modal"
+                data-bs-target=".task-modal"
+                draggable="true"
+                ondrop="(event) => { console.dir(event); event.preventDefault(); }"
+                @click="
+                  selectedTaskId = task._id;
+                  selectedSectionName = section.name;
+                "
+              >
+                <div class="container card-body">
+                  <div class="row" :class="{ 'mb-3': taskTags[task._id]?.length !== 0 }">
+                    <div class="col col-auto text-start p-0">{{ task.name }}</div>
+                  </div>
+                  <div class="row">
+                    <div
+                      class="col col-auto badge text-truncate me-2 mb-2"
+                      v-for="tag in taskTags[task._id]"
+                      :key="tag._id"
+                      :style="{
+                        'background-color': tag.colour,
+                        color: tag.colour ? undefined : 'black',
+                      }"
+                    >
+                      {{ tag.name }}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div class="row" v-else>
-            <div class="col d-flex flex-column text-center">
-              <strong>No tasks</strong>
-              Drag tasks here or click +<br />
-              to add new tasks.<br />
+            <div class="row" v-else>
+              <div class="col d-flex flex-column text-center">
+                <strong>No tasks</strong>
+                Drag tasks here or click +<br />
+                to add new tasks.<br />
+              </div>
             </div>
-          </div>
-          <div class="text-center">
-            <a
-              href="#"
-              data-bs-toggle="modal"
-              data-bs-target=".add-task-modal"
-              @click="sectionIdForCreateTask = section._id"
-            >
-              <i class="fa fa-plus-circle"></i>
-            </a>
+            <div class="text-center">
+              <a
+                href="#"
+                data-bs-toggle="modal"
+                data-bs-target=".add-task-modal"
+                @click="sectionIdForCreateTask = section._id"
+              >
+                <i class="fa fa-plus-circle"></i>
+              </a>
+            </div>
           </div>
         </div>
         <div class="container">
           <div class="row">
             <div class="col" style="width: 300px">
               <h5>
-                <a href="#"><i class="fa fa-plus me-2"></i>Add section</a>
+                <a
+                  href="#"
+                  class="text-decoration-none"
+                  data-bs-toggle="modal"
+                  data-bs-target=".create-section-modal"
+                >
+                  <i class="fa fa-plus me-2"></i>
+                  Add section
+                </a>
               </h5>
             </div>
           </div>
@@ -220,7 +279,7 @@
                 <div class="col-8">
                   <select id="input-assignee" class="form-control" v-model="newTask.assignee">
                     <option :value="undefined">N/A</option>
-                    <option v-for="user in users" :value="user._id">
+                    <option v-for="user in users" :value="user._id" :key="user._id">
                       {{ user.username }}
                     </option>
                   </select>
@@ -246,6 +305,34 @@
         </div>
       </div>
     </div>
+    <div class="modal create-section-modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Create section</h5>
+          </div>
+          <div class="modal-body m-0 px-0">
+            <create-section-component :project-id="project._id" @created="addSection" />
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal delete-section-modal">
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Delete section</h5>
+          </div>
+          <div class="modal-body text-danger"></div>
+          <div class="modal-footer">
+            <button class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button class="btn btn-danger" @click="deleteSection" data-bs-dismiss="modal">
+              Delete
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -257,7 +344,10 @@ import { useRoute } from 'vue-router';
 import ShowTaskComponent from '@/components/ShowTaskComponent.vue';
 import type { ShowErrorMessageFunction } from 'src/types/ShowError.types';
 import ProjectSettingsComponent from '@/components/ProjectSettingsComponent.vue';
+import CreateSectionComponent from '@/components/CreateSectionComponent.vue';
+
 import moment from 'moment';
+import { Modal } from 'bootstrap';
 
 const route = useRoute();
 
@@ -294,6 +384,8 @@ const selectedTaskId = ref('');
 const selectedSectionName = ref('');
 
 const sectionIdForCreateTask = ref('');
+
+const hoveringOver = ref(-1);
 
 function updateTask({ task }: { task: Task }) {
   Object.entries(sectionTasks.value).forEach(([sectionId, tasks]) => {
@@ -355,6 +447,47 @@ async function createTask(
     }
 
     sectionTasks.value[sectionId].push(createTaskResult.data);
+  } catch (error) {
+    showError(error as string);
+  }
+}
+
+function addSection({ section }: { section: Section }) {
+  project.value.sections.push(section._id);
+  sections.value.push(section);
+
+  const modalEl = document.querySelector('.create-section-modal')!;
+
+  Modal.getOrCreateInstance(modalEl).hide();
+}
+
+function showDeleteSectionModal(section: Section) {
+  const modalEl = document.querySelector('.delete-section-modal')!;
+
+  const bodyEl = modalEl.querySelector('.modal-dialog > .modal-content > div.modal-body')!;
+
+  bodyEl.textContent = `${section.tasks.length} active tasks will be deleted.`;
+
+  Modal.getOrCreateInstance(modalEl).show();
+
+  modalEl.setAttribute('data-section-id', section._id);
+}
+
+async function deleteSection() {
+  try {
+    const modalEl = document.querySelector('.delete-section-modal')!;
+
+    const sectionId = modalEl.getAttribute('data-section-id')!;
+
+    const result = await apiClient.deleteSection(sectionId);
+
+    if (result.type === 'success') {
+      const projectSectionIdx = project.value.sections.findIndex((s) => s === sectionId);
+      project.value.sections.splice(projectSectionIdx, 1);
+
+      const idx = sections.value.findIndex((s) => s._id === sectionId);
+      sections.value.splice(idx, 1);
+    }
   } catch (error) {
     showError(error as string);
   }

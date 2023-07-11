@@ -119,6 +119,7 @@
                         href="#"
                         @click="setSelected(index)"
                         v-for="(colour, index) in colours"
+                        :key="index"
                       >
                         <div
                           class="rounded-5 w-75"
