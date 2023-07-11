@@ -1,5 +1,5 @@
 <template>
-  <div class="container border" id="taskmaster-container">
+  <div class="container border rounded-5 p-3" id="taskmaster-container">
     <div class="row">
       <div class="col cols-3">
         <div class="col">
@@ -50,26 +50,35 @@
         <div class="row">
           <div class="col">
             <h5>My Tasks <i class="fa fa-arrow-down"></i></h5>
-          </div>
-        </div>
-        <div class="row">
-          <div class="col">
-            <h5>My checklist</h5>
-            <div style="background: white; border-radius: 5px">
-              <i class="fa fa-plus-circle"></i> Add...
+            <div
+              class="card mb-3"
+              v-for="task in userTasks"
+              :key="task._id"
+              style="cursor: pointer"
+              data-bs-toggle="modal"
+              data-bs-target=".task-modal"
+              @click="selectedTaskId = task._id"
+            >
+              <task-component class="card-body" :task="task" :task-tags="taskTags"></task-component>
             </div>
           </div>
         </div>
         <div class="row">
           <div class="col">
+            <h5>My checklist</h5>
+            <div class="rounded-2"><i class="fa fa-plus-circle"></i> Add...</div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col">
             <h5>Due today</h5>
-            <div style="background: white; border-radius: 5px">Lorem Ipsum...</div>
+            <div class="rounded-2">Lorem Ipsum...</div>
           </div>
         </div>
         <div class="row">
           <div class="col">
             <h5>Unscheduled</h5>
-            <div style="background: white; border-radius: 5px">Lorem Ipsum...</div>
+            <div style="border-radius: 5px">Lorem Ipsum...</div>
           </div>
         </div>
       </div>
@@ -81,12 +90,10 @@
         </div>
         <div class="row">
           <div class="col">
-            <div
-              style="background: white; border-radius: 5px; margin-top: 10px; margin-bottom: 10px"
-            >
+            <div style="border-radius: 5px; margin-top: 10px; margin-bottom: 10px">
               First notification
             </div>
-            <div style="background: white; border-radius: 5px">Second notification</div>
+            <div style="border-radius: 5px">Second notification</div>
           </div>
         </div>
       </div>
@@ -122,7 +129,7 @@
                         :key="index"
                       >
                         <div
-                          class="rounded-5 w-75"
+                          class="w-75"
                           :class="{ 'focus-ring': colour === selectedColour }"
                           style="
                             border-radius: 50%;
@@ -148,20 +155,19 @@
             </div>
           </div>
         </div>
-        <!-- <b-form-row class="mb-2">
-          <b-col> Project name </b-col>
-          <b-col>
-            <b-form-input v-model="name" />
-          </b-col>
-        </b-form-row>
-        <b-form-row class="mb-2">
-          <b-col> Project background </b-col>
-          <b-col>
-            <b-container>
-              
-            </b-container>
-          </b-col>
-        </b-form-row> -->
+      </div>
+    </div>
+  </div>
+  <div class="modal modal-lg task-modal">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-body pt-3 p-0">
+          <show-task-component
+            :id="selectedTaskId"
+            @taskChanged="updateTask"
+            @taskTagsChanged="updateTaskTags"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -171,14 +177,15 @@
 import { useUserStore } from '@/stores/user';
 import { Modal } from 'bootstrap';
 import moment from 'moment';
-import type { Project } from 'taskmaster-client';
+import type { Project, Section, Tag, Task, User } from 'taskmaster-client';
 import { reactive, ref } from 'vue';
 import Client from 'taskmaster-client';
 import { inject } from 'vue';
 import { onMounted } from 'vue';
-
 import type { ShowErrorMessageFunction } from '@/types/ShowError.types';
 import { useRouter } from 'vue-router';
+import TaskComponent from '@/components/TaskComponent.vue';
+import ShowTaskComponent from '@/components/ShowTaskComponent.vue';
 
 const userStore = useUserStore();
 
@@ -207,7 +214,14 @@ const showError: ShowErrorMessageFunction = inject('showError')!;
 
 const router = useRouter();
 
-let projects = ref([] as Project[]);
+let projects = ref<Project[]>([]);
+let userTasks = ref<Task[]>([]);
+let taskTags = ref<Record<string, Tag[]>>({});
+
+// map taskId to parent section
+const taskSections = ref<Record<string, Section>>({});
+
+const selectedTaskId = ref('');
 
 let projectName = '';
 let selectedColour = '';
@@ -256,23 +270,76 @@ function handleProjectRedirect(event: Event, index: number) {
   router.push(`/projects/${projects.value[index]._id}`);
 }
 
+function updateTask() {}
+
+function updateTaskTags() {}
+
+function getUsersForTask(taskId: string) {
+  const section = taskSections.value[taskId];
+  const project = projects.value.find((p) => p._id === section._id)!;
+  return project.users;
+}
+
 onMounted(async () => {
-  const result = await apiClient.getProjects();
-  if (result.type === 'success') {
-    projects.value = result.data;
-  } else {
-    showError(result.error.message);
+  try {
+    const projectsResult = await apiClient.getProjects();
+    if (projectsResult.type === 'error') {
+      throw projectsResult.error.message;
+    }
+
+    projects.value = projectsResult.data;
+
+    const getTasksResult = await apiClient.getTasks();
+    if (getTasksResult.type === 'error') {
+      throw getTasksResult.error.message;
+    }
+
+    userTasks.value = getTasksResult.data;
+
+    const taskPromises = userTasks.value.map(async (t) => {
+      const sectionResult = await apiClient.getSection(t.section);
+      if (sectionResult.type === 'success') {
+        return { taskId: t._id, section: sectionResult.data };
+      }
+
+      return Promise.reject(sectionResult);
+    });
+
+    const tasks = await Promise.all(taskPromises);
+
+    tasks.forEach(({ taskId, section }) => {
+      taskSections.value[taskId] = section;
+    });
+
+    const tagPromises = userTasks.value.map(async (task) => {
+      const getTagsDataResult = await apiClient.getTagsData(task.tags);
+      if (getTagsDataResult.type === 'error') {
+        return Promise.reject(getTagsDataResult);
+      }
+
+      return { taskId: task._id, tags: getTagsDataResult.data };
+    });
+
+    (await Promise.all(tagPromises)).forEach(({ taskId, tags }) => {
+      taskTags.value[taskId] = tags;
+    });
+  } catch (error) {
+    showError(error as string);
   }
 });
 
-setInterval(() => {
-  time.value = moment().format('HH:mm:ss');
-  date.value = moment().format('dddd DD/MM/YYYY');
-}, 1000);
+// setInterval(() => {
+//   time.value = moment().format('HH:mm:ss');
+//   date.value = moment().format('dddd DD/MM/YYYY');
+// }, 1000);
 </script>
 
 <style scoped>
 .project-link:hover {
-  background-color: lightgrey;
+  background-color: var(--bs-gray-300);
+}
+
+#taskmaster-container {
+  background-color: var(--bs-gray-400);
 }
 </style>

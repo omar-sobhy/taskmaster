@@ -82,7 +82,6 @@
           v-for="(section, index) in sections"
           class="container tasks-container"
           v-bind:key="section._id"
-          draggable="true"
         >
           <!-- Section header -->
           <div
@@ -125,48 +124,30 @@
             </div>
           </div>
           <!-- Section body -->
-          <div
-            class="h-100"
-            ondrop="(event) => {console.dir(event); event.preventDefault();}"
-            ondragover="(event) => {console.dir(event); event.preventDefault();}"
-          >
+          <div class="h-100">
             <!-- Task row -->
-            <div
-              class="row d-flex justify-content-center"
-              v-for="task in sectionTasks[section._id]"
-              v-if="section.tasks.length !== 0"
-              :key="task._id"
-            >
-              <!-- Task card -->
+            <div v-if="section.tasks.length !== 0">
               <div
-                class="card w-75 d-flex text-center mb-2"
-                style="cursor: pointer"
-                data-bs-toggle="modal"
-                data-bs-target=".task-modal"
-                draggable="true"
-                ondrop="(event) => { console.dir(event); event.preventDefault(); }"
-                @click="
-                  selectedTaskId = task._id;
-                  selectedSectionName = section.name;
-                "
+                class="row d-flex justify-content-center"
+                v-for="task in sectionTasks[section._id]"
+                :key="task._id"
               >
-                <div class="container card-body">
-                  <div class="row" :class="{ 'mb-3': taskTags[task._id]?.length !== 0 }">
-                    <div class="col col-auto text-start p-0">{{ task.name }}</div>
-                  </div>
-                  <div class="row">
-                    <div
-                      class="col col-auto badge text-truncate me-2 mb-2"
-                      v-for="tag in taskTags[task._id]"
-                      :key="tag._id"
-                      :style="{
-                        'background-color': tag.colour,
-                        color: tag.colour ? undefined : 'black',
-                      }"
-                    >
-                      {{ tag.name }}
-                    </div>
-                  </div>
+                <!-- Task card -->
+                <div
+                  class="col col-auto card w-75 mb-2"
+                  style="cursor: pointer"
+                  data-bs-toggle="modal"
+                  data-bs-target=".task-modal"
+                  @click="
+                    selectedTaskId = task._id;
+                    selectedSectionName = section.name;
+                  "
+                >
+                  <task-component
+                    class="card-body"
+                    :task="task"
+                    :taskTags="taskTags"
+                  ></task-component>
                 </div>
               </div>
             </div>
@@ -213,10 +194,7 @@
         <div class="modal-content">
           <div class="modal-body pt-3 p-0">
             <show-task-component
-              :users="users"
               :id="selectedTaskId"
-              :projectTags="tags"
-              :sectionName="selectedSectionName"
               @taskChanged="updateTask"
               @taskTagsChanged="updateTaskTags"
             />
@@ -345,6 +323,7 @@ import ShowTaskComponent from '@/components/ShowTaskComponent.vue';
 import type { ShowErrorMessageFunction } from 'src/types/ShowError.types';
 import ProjectSettingsComponent from '@/components/ProjectSettingsComponent.vue';
 import CreateSectionComponent from '@/components/CreateSectionComponent.vue';
+import TaskComponent from '@/components/TaskComponent.vue';
 
 import moment from 'moment';
 import { Modal } from 'bootstrap';

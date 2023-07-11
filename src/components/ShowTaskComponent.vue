@@ -2,14 +2,20 @@
   <div class="container">
     <!-- Header -->
     <div class="row justify-content-between border-bottom border-dark">
-      <div class="col-2">
-        <input
-          class="form-control border-0"
+      <div class="col">
+        <textarea
+          class="form-control border-0 overflow-hidden taskmaster-textarea"
           :value="task.name"
+          style="resize: none"
           @change="(e: Event) => { task.name = (e.currentTarget as HTMLInputElement).value; }"
-        />
+          @keydown="
+            (event) => {
+              updateTextAreaHeight();
+            }
+          "
+        ></textarea>
       </div>
-      <div class="col-4">
+      <div class="col col-4">
         <select class="form-select" v-model="task.assignee">
           <option :value="undefined" :selected="!!task.assignee">N/A</option>
           <option
@@ -70,64 +76,77 @@
               </VueDatePicker>
             </div>
           </div>
+          <!-- Tags -->
           <div class="row border-bottom border-dark">
-            <div
-              id="tags-dropdown-wrapper"
-              class="col"
-              @click="showTagDropdown"
-              style="cursor: pointer"
+            <button
+              class="btn container pb-2"
+              data-bs-toggle="dropdown"
+              data-bs-auto-close="outside"
+              data-bs-target="#tags-dropdown"
+              style="border: none"
             >
-              <div class="container pb-2">
-                <div class="row">
-                  <div class="col d-flex align-items-center">
-                    <i class="fa fa-tag"></i>
-                    <div class="dropdown" id="tags-dropdown">
-                      <button
-                        class="btn dropdown-toggle"
-                        type="button"
-                        aria-expanded="false"
-                        data-bs-toggle="dropdown"
-                        data-bs-auto-close="outside"
-                      >
-                        Tags
-                      </button>
-                      <ul class="dropdown-menu">
-                        <li>
-                          <a class="dropdown-item" href="#">Add tags</a>
-                        </li>
-                        <li v-for="tag in projectTags" :key="tag._id">
-                          <a class="dropdown-item" href="#" @click="toggleTag(tag._id)">{{
-                            tag.name
-                          }}</a>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-                <div class="row">
-                  <div class="col">
-                    <div>
-                      <div
-                        class="badge badge-pill me-2 mb-2"
-                        v-for="tag in tags"
-                        :key="tag._id"
-                        :style="{
-                          'background-color': tag.colour,
-                          color: tag.colour ? 'white' : 'black',
-                        }"
-                      >
-                        {{ tag.name }}
-                      </div>
-                    </div>
+              <div class="row pb-2">
+                <div class="col d-flex align-items-center">
+                  <i class="fa fa-tag"></i>
+                  <div class="dropdown" id="tags-dropdown">
+                    Tags
+                    <i class="fas fa-caret-down"></i>
+                    <ul class="dropdown-menu" style="width: 290px">
+                      <li>
+                        <a class="dropdown-item" href="#">Add tags</a>
+                      </li>
+                      <li v-for="tag in projectTags" :key="tag._id">
+                        <a class="dropdown-item text-truncate" href="#" @click="toggleTag(tag._id)">
+                          {{ tag.name }}
+                        </a>
+                      </li>
+                    </ul>
                   </div>
                 </div>
               </div>
-            </div>
+              <!-- Badges -->
+              <div class="row ps-2">
+                <div
+                  class="col col-auto badge badge-pill me-2 mb-2 text-truncate"
+                  v-for="tag in tags"
+                  :key="tag._id"
+                  style="max-width: 10rem"
+                  :style="{
+                    'background-color': tag.colour,
+                    color: tag.colour ? 'white' : 'black',
+                  }"
+                >
+                  {{ tag.name }}
+                </div>
+              </div>
+            </button>
           </div>
+          <!-- Watchers -->
           <div class="row border-bottom border-dark">
-            <div class="col d-flex align-items-center">
+            <button
+              class="btn col d-flex align-items-center"
+              style="border: none"
+              data-bs-toggle="dropdown"
+              data-bs-auto-close="outside"
+              data-bs-target="#watchers-dropdown"
+            >
               <i class="far fa-eye"></i>
-              <span>Watchers</span>
+              <div class="dropdown" id="watchers-dropdown">
+                Watchers
+                <i class="fas fa-caret-down"></i>
+                <ul class="dropdown-menu px-2" style="width: 290px">
+                  <li>
+                    <input
+                      type="text"
+                      class="form-control border-info mb-3"
+                      placeholder="Find person"
+                    />
+                  </li>
+                  <li v-for="user in users" :key="user._id">
+                    <a class="dropdown-item" href="#">{{ user.username }}</a>
+                  </li>
+                </ul>
+              </div>
               <div>
                 <div
                   class="badge badge-pill badge-primary"
@@ -137,12 +156,11 @@
                   {{ watcher.username }}
                 </div>
               </div>
-            </div>
+            </button>
           </div>
           <div class="row">
             <div class="col d-flex flex-column">
-              <strong>{{ task.name }}</strong>
-              <span>{{ sectionName }}</span>
+              <span>{{ section.name }}</span>
               <div class="container p-0">
                 <div class="row">
                   <div class="col col-1 d-flex flex-row align-items-center">
@@ -198,7 +216,7 @@
 
 <script setup lang="ts">
 import type Client from 'taskmaster-client';
-import type { Tag, Task, User } from 'taskmaster-client';
+import type { Section, Tag, Task, User } from 'taskmaster-client';
 import { onMounted } from 'vue';
 import { watch } from 'vue';
 import { ref } from 'vue';
@@ -209,10 +227,7 @@ import type { ShowErrorMessageFunction } from 'src/types/ShowError.types';
 import { Dropdown } from 'bootstrap';
 
 const props = defineProps<{
-  users: User[];
   id: string;
-  projectTags: Tag[];
-  sectionName: string;
 }>();
 
 const emit = defineEmits(['taskChanged', 'taskTagsChanged']);
@@ -239,12 +254,19 @@ const tags = ref<Tag[]>([]);
 
 const watchers = ref<User[]>([]);
 
+const section = ref<Partial<Section>>({});
+
+const projectTags = ref<Tag[]>([]);
+
+const users = ref<User[]>([]);
+
 const newComment = ref('');
 
 function showTagDropdown(e: Event) {
   const el = e.target as HTMLElement;
   if (el.dataset.bsToggle !== 'dropdown') {
-    const dropdown = Dropdown.getOrCreateInstance('#tags-dropdown');
+    const el = document.getElementById('tags-dropdown')!;
+    const dropdown = Dropdown.getOrCreateInstance(el);
     dropdown.toggle();
   }
 }
@@ -289,7 +311,7 @@ async function toggleTag(id: string) {
       tags.value.splice(index, 1);
       task.value.tags?.splice(index, 1);
     } else {
-      const tag = props.projectTags.find((t) => t._id === id)!;
+      const tag = projectTags.value.find((t) => t._id === id)!;
       tags.value.push(tag);
       task.value.tags?.push(id);
     }
@@ -371,19 +393,45 @@ watch(
 
         task.value = getTasksDataResult.data;
 
-        const getTagsDataResult = await apiClient.getTagsData(task.value.tags!);
-        if (getTagsDataResult.type !== 'success') {
-          throw getTagsDataResult.error.message;
+        const getSectionResult = await apiClient.getSection(getTasksDataResult.data.section);
+        if (getSectionResult.type === 'error') {
+          throw getSectionResult.error;
         }
 
-        tags.value = getTagsDataResult.data;
+        section.value = getSectionResult.data;
 
-        const getUsersResult = await apiClient.getUserData(task.value.watchers!);
-        if (getUsersResult.type !== 'success') {
+        const getProjectResult = await apiClient.getProject(getSectionResult.data.project);
+        if (getProjectResult.type === 'error') {
+          throw getProjectResult.error.message;
+        }
+
+        const getUsersResult = await apiClient.getUserData(getProjectResult.data.users);
+        if (getUsersResult.type === 'error') {
           throw getUsersResult.error.message;
         }
 
-        watchers.value = getUsersResult.data;
+        users.value = getUsersResult.data;
+
+        const getProjectTagsResult = await apiClient.getTagsData(getProjectResult.data.tags);
+        if (getProjectTagsResult.type === 'error') {
+          throw getProjectTagsResult.error.message;
+        }
+
+        projectTags.value = getProjectTagsResult.data;
+
+        const getTaskTagsDataResult = await apiClient.getTagsData(task.value.tags!);
+        if (getTaskTagsDataResult.type !== 'success') {
+          throw getTaskTagsDataResult.error.message;
+        }
+
+        tags.value = getTaskTagsDataResult.data;
+
+        const getWatchersResult = await apiClient.getUserData(task.value.watchers!);
+        if (getWatchersResult.type !== 'success') {
+          throw getWatchersResult.error.message;
+        }
+
+        watchers.value = getWatchersResult.data;
 
         updateTextAreaHeight();
       } catch (error) {
